@@ -19,7 +19,6 @@ from rich.console import Console
 from scripts.deploy.deploy_digg import (
     deploy_digg_with_existing_badger,
     digg_deploy_flow,
-    init_prod_digg,
 )
 from scripts.systems.badger_system import connect_badger
 from helpers.registry import token_registry
@@ -44,53 +43,8 @@ def main():
 
     console.print("[blue]=== 🦡 Test ENV for account {} 🦡 ===[/blue]".format(user))
 
-    distribute_test_ether(user, Wei("10 ether"))
-    distribute_test_ether(badger.deployer, Wei("20 ether"))
+    distribute_test_ether(user, Wei("20 ether"))
     distribute_from_whales(user)
-
-    wbtc = interface.IERC20(token_registry.wbtc)
-
-    assert wbtc.balanceOf(user) >= 200000000
-    init_prod_digg(badger, user)
-
-    accounts.at(digg.daoDiggTimelock, force=True)
-    digg.token.transfer(user, 20000000000, {"from": digg.daoDiggTimelock})
-
-    digg_liquidity_amount = 1000000000
-    wbtc_liquidity_amount = 100000000
-
-    assert digg.token.balanceOf(user) >= digg_liquidity_amount * 2
-    assert wbtc.balanceOf(user) >= wbtc_liquidity_amount * 2
-
-    uni = UniswapSystem()
-    wbtc.approve(uni.router, wbtc_liquidity_amount, {"from": user})
-    digg.token.approve(uni.router, digg_liquidity_amount, {"from": user})
-    uni.router.addLiquidity(
-        digg.token,
-        wbtc,
-        digg_liquidity_amount,
-        wbtc_liquidity_amount,
-        digg_liquidity_amount,
-        wbtc_liquidity_amount,
-        user,
-        chain.time() + 1000,
-        {"from": user},
-    )
-
-    sushi = SushiswapSystem()
-    wbtc.approve(sushi.router, wbtc_liquidity_amount, {"from": user})
-    digg.token.approve(sushi.router, digg_liquidity_amount, {"from": user})
-    sushi.router.addLiquidity(
-        digg.token,
-        wbtc,
-        digg_liquidity_amount,
-        wbtc_liquidity_amount,
-        digg_liquidity_amount,
-        wbtc_liquidity_amount,
-        user,
-        chain.time() + 1000,
-        {"from": user},
-    )
 
     console.print("[green]=== ✅ Test ENV Setup Complete ✅ ===[/green]")
     # Keep ganache open until closed
